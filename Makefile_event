@@ -1,0 +1,57 @@
+# Kyle Strand, WSU 2013
+
+
+ifndef PROMC
+$(error PROMC env variable is not set. Run setup.sh first)
+endif
+
+
+include $(ROOTSYS)/etc/Makefile.arch\
+
+#          this is without optimization 
+FFLAGS	  =   
+LFLAGS    =  -lpdflib804 -lmathlib -lpacklib -lkernlib -g
+LIBS      = -L/share/cern/cernlib/pro/lib 
+ICLUF1     =  FortPro/src
+ICLUF2 	  =  ${PROMC}/include
+ICLUF3    =  FortPro/src_promc/
+ 
+#           This is a comment
+FCOMPILER = f77
+#Root variables
+ROOTCFLAGS  = $(shell root-config --nonew --cflags)
+ROOTLIBS    = $(shell root-config --nonew --libs)
+ROOTGTTLIBS = $(shell root-config --nonew --glibs)
+# Assign or add variables
+CXXFLAGS     += $(ROOTCFLAGS)
+LIBS         += $(ROOTLIBS)
+LIBS         += -L${PROMC}/lib -lprotoc -lprotobuf -lprotobuf-lite -lcbook
+
+INCLUDE3= -I${PROMC}/include
+
+
+SOURCE_FILES1 := $(shell ls -1 event.cxx)
+objects       = $(patsubst %.cxx,%.o,$(SOURCE_FILES1))
+
+# c++
+SOURCE_FILES2 := $(shell ls -1 FortPro/src/*.cxx)
+SOURCE_FILES3 := $(shell ls -1 FortPro/src_promc/*.cc)
+objects       += $(patsubst %.cxx,%.o,$(SOURCE_FILES2))
+objects       += $(patsubst %.cc,%.o,$(SOURCE_FILES3))
+
+
+#global	=	Makefile
+
+tasks:          event 
+
+event: 	$(objects)
+	$(FCOMPILER) -I$(ICLUF1) -I$(ICLUF2) -I$(ICLUF3)  $(FFLAGS) $(objects) $(LIBS) -o $@ $(LFLAGS) 
+
+%.o: %.cxx
+	$(CXX) $(OPT) -I$(ICLUF2) -I$(ICLUF3) $(CXXFLAGS) -o $@ -c $<
+%.o: %.cc
+	$(CXX) -I$(ICLUF2) -I$(ICLUF3) $(OPT) $(CXXFLAGS) -o $@ -c $<
+
+
+clean:
+	rm *.o *~ *.exe
