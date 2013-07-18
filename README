@@ -1,0 +1,210 @@
+====================================================================================================
+====================================================================================================
+===================================FortranProMC====================================================
+====================================================================================================
+====================================================================================================
+
+
+
+==Contents==
+1. Introduction
+2. Installation
+3. Using FortranProMC
+4. Links
+5. Acknowledgements
+6. Disclaimer
+
+
+
+
+
+=========1. Introduction=========
+
+Fortran2ProMC is an implementation of ProMC specifically for reading Fortran Monte Carlo simulations
+using C++ wrappers. FortranProMC utilizes Google Protocol Buffers to compactly read and write data
+from PYTHIA6. The ProMC pacakge provides a basic framework for writing the FORTRAN based code into 
+the .promc file format using C++. After the .promc file has been written, it can be read and accessed 
+by C++, Java, or Python. ProMC is designed to be a cross-platform, allowing any format to call the 
+.promc file. The FortranProMC package is based on the RootTuple package to create wrap the code from 
+FORTRAN to C++.
+
+
+
+=========2. Installation=========
+
+FortranProMC requires ProMC to be installed.
+
+-ProMC installation instructions can be accessed at:
+
+https://atlaswww.hep.anl.gov/asc/wikidoc/doku.php?id=asc:promc:installation
+
+After ProMC has been installed, FortranProMC can be immediately run using the 
+default data that has been provided. The default MC simulation is PYTHIA6. (pythia-6.4.27.f)
+
+Run 'make' which will compile pyt.exe.
+Run 'pyt.exe' to run the program.
+
+Comments (S.Chekanov):
+
+1) you may need to link Proto templates to the proto files to make the files self-describing
+Just do this: ln -s $PROMC/proto/promc proto and then type "make"
+
+2) It is advisable to attach log file to the ProMC file. In this case, do this:
+
+  pyt.exe > logfile.txt 2>&1
+
+  (logfile.txt will be attached automatically)
+ 
+
+=========3. Using FortranProMC==========
+
+-Once FortranProMC is untarred and compiled, the Java Browser that is included can be run to view
+the defaults. The browser can be accessed by running either of the following commands:
+
+promc_browser Pythia6.promc
+
+java -jar browser_promc.jar Pythia6.promc
+
+-Once the window is open, the header information is immediately available which will have some default 
+information defined for the PYTHIA6 MC simulation (many of these are left empty by default). 
+
+-The column on the left is the event number. Clicking on any of the events will open the detailed info 
+for each event in the right window. This will have all particles created in each event and display 
+parameters of each particle. General info for each event can be viewed by right clicking an event 
+number in the left window and clicking 'EventInfo.' This will then list the basic attributes of the 
+desired event. The library of particle information can be viewed at anytime by clicking the MetaData
+tab on the top panel and clicking on 'ParticleData.' To return to the header, in the MetaData tab, 
+simply click 'Header Record.' Statistics for the simulation can be accessed (only if indicated by user
+before running the program) by clicking 'Statistics' under the MetaData tab. If a logfile was attached,
+it can also be accessed under the MetaData tab. If you are interested in seeing the Google Protocol 
+Buffers data layout, these all can be accessed under the DataLayout tab on the top panel.
+
+-To change the parameters of the .promc file, the source code will need to be manipulated. Since 
+PYTHIA6ProMC reads FORTRAN files using C++, it might be necessary to edit the FORTRAN source (pyt.f) 
+as well as the C++ source. 
+
+-pyt.f can be found in the main Fortran2ProMC folder.
+
+-All C++ source can be accessed in the FortPro/src folder.
+
+-If maniupulation of currently populated data or header information is required, the only source that
+will need to be changed is promcfortran.cxx.
+
+	==pyt.f==
+		-To edit the number of events used in analysis, change the NVENTS variable
+			-The default is NVENTS=1000
+			-To use a different number of events, change the numeric value assigned to 
+			NVENTS
+		-If new variables are needed, these can be added into this file from the pythia6 
+		FORTRAN source code.
+			-Make sure that all files reflect these new variables.
+
+	==promcfortran.cxx==
+		-To edit header information, find Initialise() function. 
+		-ProMC output file name can be changed by editing the following line
+			epbook = new ProMCBook("Pythia6.promc","w")
+			-Simply just replace "Pythia6.promc" with *.promc
+		-The lines containing
+			header.set_*
+		are the lines needed to be manipulated for piece in the header. Simply change the '0'
+		to anything else.
+		-The particle data is automatically populated from the ProMC folder.
+
+		-The AddEvent() function will add events to the .promc file and also populated all 
+		particle data to the event.
+		-To change any event information or particle information, pyt.f, promcfortran.h, 
+		interface.cxx, and interface.h will all need to be edited so that the correct variables
+		are passed into promcfortran.cxx.
+		-The AddParticle() function creates vectors of each parameter passed from pyt.f and thus
+		can be entered into the .promc file within the AddEvent() function.
+
+	==promcfortran.h==
+		-This file contains all the methods and objects required for FortranProMC to operate
+		correctly.
+		-When changing parameters of the .promc file, the methods within this header file will 
+		need to be edited.
+
+	==interface.cxx==
+		-This file calls all FORTRAN subroutines from C++.
+		-When changing parameters, each function call will need to be edited to pass the desired
+		variables.
+
+	==interface.h==
+		-Header file for interface.cxx
+		-You get the editing picture by now.
+
+	==event.cxx==
+		-This file will take a large ProMC file and it will create a new ProMC file and fill it
+		with a specific desired event.
+		-To change the event, simply change the numeric parameter of the following line:
+			ProMCEvent test = epbook->event(6349);
+
+
+-FortranProMC works as a simple intermediary for any FORTRAN based MC program and ProMC. so for further
+understanding of the functionality of each individual package, please consult the links section below.
+
+
+
+=========4. Links=========
+
+-PYTHIA6: 
+
+https://pythia6.hepforge.org/
+	-Contains tutorials and wiki
+
+http://www.nikhef.nl/~jleerdam/pythia8doc/PYTHIA6TranslationTable.php?filepath=%22.$filepath.%22
+	-A Great translation table for decoding PYTHIA6 source.
+
+
+-ProMC
+
+https://atlaswww.hep.anl.gov/asc/wikidoc/doku.php?id=asc:promc
+	-Contains installation instructions, user's manual, and basic tutorials
+
+-RootTuple == The inspiration for the FortranProMC framework
+
+http://roottuple.hepforge.org/
+	-Contains wiki
+
+
+
+=========5. Acknowledgements=========
+
+ProMC:
+
+	S.Chekanov, 
+"Next generation input-output data format for HEP using Google's protocol buffers", 
+ANL-HEP-CP-13-32, Snowmass 2013 Proceedings, Computational frontier,
+https://atlaswww.hep.anl.gov/asc/promc
+
+
+PYTHIA6:
+
+	Torbjörn Sjöstrand, Stephen Mrenna, Peter Skands
+"PYTHIA 6.4"
+https://pythia6.hepforge.org
+
+RootTuple:
+
+	David C. Hall,
+"RootTuple: A library enabling ROOT n-tuple output from FORTRAN HEP programs"
+https://roottuple.hepforge.org
+
+
+
+=========6. Disclaimer=========
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 3 of the License, or any later
+version. This program is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+
+
+
+Kyle Strand - kstrand12@winona.edu
+Winona State University
+2013
